@@ -5,10 +5,168 @@
 <title>Radio Surprise Studio — Build Your Radio</title>
 <meta name="description" content="Create a personalised radio with photos and music as a surprise for someone special.">
 <link rel="stylesheet" href="/style.css">
-<script src="/radio-core.js"></script>
+<script src="/radio-core.js">
+// ===== EDIT MODE LOADER =====
+(function(){
+  var urlParams = new URLSearchParams(window.location.search);
+  var editParam = urlParams.get('edit');
+  if (!editParam) return;
+
+  editingId = editParam.trim();
+  
+  // Show edit PIN overlay
+  var overlay = document.getElementById('editAuthOverlay');
+  overlay.style.display = 'flex';
+  
+  var eInputs = [
+    document.getElementById('ePin0'), document.getElementById('ePin1'),
+    document.getElementById('ePin2'), document.getElementById('ePin3')
+  ];
+  
+  eInputs[0].focus();
+  
+  eInputs.forEach(function(inp, i){
+    inp.addEventListener('input', function(){
+      inp.value = inp.value.replace(/\D/g,'');
+      inp.classList.toggle('filled', inp.value.length === 1);
+      document.getElementById('editAuthError').textContent = '';
+      if (inp.value && i < 3) eInputs[i+1].focus();
+      else if (inp.value && i === 3) verifyEditPin();
+    });
+    inp.addEventListener('keydown', function(e){
+      if (e.key === 'Backspace' && !inp.value && i > 0) eInputs[i-1].focus();
+      if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); eInputs[i-1].focus(); }
+      if (e.key === 'ArrowRight' && i < 3) { e.preventDefault(); eInputs[i+1].focus(); }
+    });
+  });
+  
+  function getEditPin() { return eInputs.map(function(inp){return inp.value;}).join(''); }
+  
+  function verifyEditPin() {
+    var code = getEditPin();
+    if (code.length !== 4) return;
+    
+    document.getElementById('editAuthError').style.color = '#c084fc';
+    document.getElementById('editAuthError').textContent = 'Verifying lock code...';
+    
+    fetch('/api/edit-config/' + editingId + '?code=' + code)
+      .then(function(r) {
+        if (!r.ok) throw new Error('invalid');
+        return r.json();
+      })
+      .then(function(cfg) {
+        loadConfigForEditing(cfg);
+      })
+      .catch(function() {
+        document.getElementById('editAuthError').style.color = '#ef4444';
+        document.getElementById('editAuthError').textContent = 'Incorrect passcode!';
+        // Shake card
+        var card = document.getElementById('editAuthCard');
+        card.classList.add('shake');
+        setTimeout(function(){ card.classList.remove('shake'); }, 450);
+        // Clear
+        eInputs.forEach(function(inp){ inp.value = ''; inp.classList.remove('filled'); });
+        eInputs[0].focus();
+      });
+  }
+  
+  function loadConfigForEditing(cfg) {
+    // Hide auth modal
+    overlay.style.display = 'none';
+    
+    // Step 1: Photos
+    photos = (cfg.photos || []).map(function(p){
+      return { file: null, url: p.url, caption: p.caption };
+    });
+    renderGrid();
+    
+    // Step 2: Music
+    if (cfg.audioUrl) {
+      editingAudioUrl = cfg.audioUrl;
+      audioStart = cfg.audioStart || 0;
+      audioEnd   = cfg.audioEnd   || 0;
+      audioDur   = cfg.audioDur   || 0;
+      
+      document.getElementById('apName').textContent = 'Attached: ' + cfg.audioUrl.split('/').pop();
+      pAudio.src = cfg.audioUrl;
+      
+      pAudio.addEventListener('loadedmetadata', function(){
+        var dur = pAudio.duration || audioDur || 300;
+        trimStart.max = trimEnd.max = dur;
+        trimStart.value = audioStart;
+        trimEnd.value = audioEnd;
+        trimStartVal.textContent = fmtTime(audioStart);
+        trimEndVal.textContent = fmtTime(audioEnd);
+        apTotal.textContent = fmtTime(dur);
+        updateClipBadge();
+        document.getElementById('audioPlayerWrap').style.display = 'block';
+      }, {once:true});
+    }
+    
+    // Step 3: Design selectors
+    curStyle = cfg.radioStyle || 'kawaii';
+    curPattern = cfg.filmPattern || 'classic';
+    curFont = cfg.fontId || 'playful';
+    
+    // Update active classes
+    rsGrid.querySelectorAll('.sel-card').forEach(function(card){
+      card.classList.toggle('active', card.querySelector('.sel-name').textContent === (RADIO_STYLES.find(function(r){return r.id===curStyle;})||{}).name);
+    });
+    fpGrid.querySelectorAll('.fp-card').forEach(function(card){
+      card.classList.toggle('active', card.querySelector('.fp-name').textContent === (FILM_PATTERNS.find(function(r){return r.id===curPattern;})||{}).name);
+    });
+    fGrid.querySelectorAll('.font-btn2').forEach(function(btn){
+      btn.classList.toggle('active', btn.textContent === (FONTS.find(function(f){return f.id===curFont;})||{}).label);
+    });
+    
+    // Text inputs
+    document.getElementById('txtTitle').value = cfg.title || '';
+    document.getElementById('txtSub').value = cfg.tagline || '';
+    document.getElementById('txtCaption').value = cfg.captionDefault || '';
+    document.getElementById('txtKnob').value = cfg.knobLabel || '';
+    document.getElementById('txtHint').value = cfg.hint || '';
+    document.getElementById('lockQuestion').value = cfg.lockQuestion || '';
+    
+    // Passcode PIN inputs
+    lockCode = cfg.lockCode || '';
+    if (lockCode.length === 4) {
+      lockCode.split('').forEach(function(ch, i){
+        pinInputs[i].value = ch;
+        pinInputs[i].classList.add('filled');
+      });
+    }
+    
+    // Preview label tag updates
+    updatePreview();
+  }
+})();
+
+</script>
 </head>
 <body>
 <div class="page-bg"></div>
+
+<!-- Edit Auth Overlay -->
+<div id="editAuthOverlay" style="display: none; position: fixed; inset: 0; background: rgba(10,5,25,.95); z-index: 500; align-items: center; justify-content: center; flex-direction: column; padding: 20px;">
+  <div id="editAuthCard" style="width: min(90vw, 420px); background: rgba(255,255,255,0.15); backdrop-filter: blur(26px); -webkit-backdrop-filter: blur(26px); border-radius: 28px; padding: 36px 28px; border: 2.5px solid rgba(255,255,255,0.45); box-shadow: 0 24px 60px rgba(0,0,0,0.22); text-align: center; transition: transform 0.15s;">
+    <div style="font-size: 3rem; margin-bottom: 14px;">✏️</div>
+    <h2 style="font-family: 'Baloo 2', cursive; font-size: 1.8rem; color: #ff5d8f; margin: 0 0 16px; -webkit-text-stroke: 1px #ffffffaa; text-shadow: 2px 2px 0 rgba(255,255,255,.45);">Edit Radio Surprise</h2>
+    <p style="font-size: 0.95rem; font-weight: 600; line-height: 1.6; margin: 0 0 24px; color: #4a3350; opacity: 0.85;">Enter the 4-digit unlock code to access and edit this radio surprise.</p>
+    
+    <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px;">
+      <input class="pin-digit" id="ePin0" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+      <input class="pin-digit" id="ePin1" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+      <input class="pin-digit" id="ePin2" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+      <input class="pin-digit" id="ePin3" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+    </div>
+    
+    <div id="editAuthError" style="color: #ef4444; font-size: 0.85rem; font-weight: 700; min-height: 18px; margin-top: 8px;"></div>
+    <div style="margin-top: 24px;">
+      <a href="/" style="color: #c084fc; font-size: 0.88rem; font-weight: 600; text-decoration: none;">&larr; Cancel and start new</a>
+    </div>
+  </div>
+</div>
+
 <header class="site-header">
   <div class="logo">Radio Surprise <span>Studio</span></div>
   <div style="font-size:.78rem;color:#7c5ccc;">build something beautiful ✦</div>
@@ -248,6 +406,8 @@
 <audio id="previewAudio" style="display:none"></audio><script>
 // ===== DATA =====
 var photos = []; // {file, url, caption}
+var editingId = null;
+var editingAudioUrl = null;
 var audioFile = null;
 var audioStart = 0, audioEnd = 0, audioDur = 0;
 var curStyle = 'kawaii', curPattern = 'classic', curFont = 'playful';
@@ -402,6 +562,142 @@ pAudio.addEventListener('timeupdate',function(){
   apFill.style.width=Math.max(0,Math.min(100,prog*100))+'%';
   apCur.textContent=fmtTime(t);
 });
+
+// ===== EDIT MODE LOADER =====
+(function(){
+  var urlParams = new URLSearchParams(window.location.search);
+  var editParam = urlParams.get('edit');
+  if (!editParam) return;
+
+  editingId = editParam.trim();
+  
+  // Show edit PIN overlay
+  var overlay = document.getElementById('editAuthOverlay');
+  overlay.style.display = 'flex';
+  
+  var eInputs = [
+    document.getElementById('ePin0'), document.getElementById('ePin1'),
+    document.getElementById('ePin2'), document.getElementById('ePin3')
+  ];
+  
+  eInputs[0].focus();
+  
+  eInputs.forEach(function(inp, i){
+    inp.addEventListener('input', function(){
+      inp.value = inp.value.replace(/\D/g,'');
+      inp.classList.toggle('filled', inp.value.length === 1);
+      document.getElementById('editAuthError').textContent = '';
+      if (inp.value && i < 3) eInputs[i+1].focus();
+      else if (inp.value && i === 3) verifyEditPin();
+    });
+    inp.addEventListener('keydown', function(e){
+      if (e.key === 'Backspace' && !inp.value && i > 0) eInputs[i-1].focus();
+      if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); eInputs[i-1].focus(); }
+      if (e.key === 'ArrowRight' && i < 3) { e.preventDefault(); eInputs[i+1].focus(); }
+    });
+  });
+  
+  function getEditPin() { return eInputs.map(function(inp){return inp.value;}).join(''); }
+  
+  function verifyEditPin() {
+    var code = getEditPin();
+    if (code.length !== 4) return;
+    
+    document.getElementById('editAuthError').style.color = '#c084fc';
+    document.getElementById('editAuthError').textContent = 'Verifying lock code...';
+    
+    fetch('/api/edit-config/' + editingId + '?code=' + code)
+      .then(function(r) {
+        if (!r.ok) throw new Error('invalid');
+        return r.json();
+      })
+      .then(function(cfg) {
+        loadConfigForEditing(cfg);
+      })
+      .catch(function() {
+        document.getElementById('editAuthError').style.color = '#ef4444';
+        document.getElementById('editAuthError').textContent = 'Incorrect passcode!';
+        // Shake card
+        var card = document.getElementById('editAuthCard');
+        card.classList.add('shake');
+        setTimeout(function(){ card.classList.remove('shake'); }, 450);
+        // Clear
+        eInputs.forEach(function(inp){ inp.value = ''; inp.classList.remove('filled'); });
+        eInputs[0].focus();
+      });
+  }
+  
+  function loadConfigForEditing(cfg) {
+    // Hide auth modal
+    overlay.style.display = 'none';
+    
+    // Step 1: Photos
+    photos = (cfg.photos || []).map(function(p){
+      return { file: null, url: p.url, caption: p.caption };
+    });
+    renderGrid();
+    
+    // Step 2: Music
+    if (cfg.audioUrl) {
+      editingAudioUrl = cfg.audioUrl;
+      audioStart = cfg.audioStart || 0;
+      audioEnd   = cfg.audioEnd   || 0;
+      audioDur   = cfg.audioDur   || 0;
+      
+      document.getElementById('apName').textContent = 'Attached: ' + cfg.audioUrl.split('/').pop();
+      pAudio.src = cfg.audioUrl;
+      
+      pAudio.addEventListener('loadedmetadata', function(){
+        var dur = pAudio.duration || audioDur || 300;
+        trimStart.max = trimEnd.max = dur;
+        trimStart.value = audioStart;
+        trimEnd.value = audioEnd;
+        trimStartVal.textContent = fmtTime(audioStart);
+        trimEndVal.textContent = fmtTime(audioEnd);
+        apTotal.textContent = fmtTime(dur);
+        updateClipBadge();
+        document.getElementById('audioPlayerWrap').style.display = 'block';
+      }, {once:true});
+    }
+    
+    // Step 3: Design selectors
+    curStyle = cfg.radioStyle || 'kawaii';
+    curPattern = cfg.filmPattern || 'classic';
+    curFont = cfg.fontId || 'playful';
+    
+    // Update active classes
+    rsGrid.querySelectorAll('.sel-card').forEach(function(card){
+      card.classList.toggle('active', card.querySelector('.sel-name').textContent === (RADIO_STYLES.find(function(r){return r.id===curStyle;})||{}).name);
+    });
+    fpGrid.querySelectorAll('.fp-card').forEach(function(card){
+      card.classList.toggle('active', card.querySelector('.fp-name').textContent === (FILM_PATTERNS.find(function(r){return r.id===curPattern;})||{}).name);
+    });
+    fGrid.querySelectorAll('.font-btn2').forEach(function(btn){
+      btn.classList.toggle('active', btn.textContent === (FONTS.find(function(f){return f.id===curFont;})||{}).label);
+    });
+    
+    // Text inputs
+    document.getElementById('txtTitle').value = cfg.title || '';
+    document.getElementById('txtSub').value = cfg.tagline || '';
+    document.getElementById('txtCaption').value = cfg.captionDefault || '';
+    document.getElementById('txtKnob').value = cfg.knobLabel || '';
+    document.getElementById('txtHint').value = cfg.hint || '';
+    document.getElementById('lockQuestion').value = cfg.lockQuestion || '';
+    
+    // Passcode PIN inputs
+    lockCode = cfg.lockCode || '';
+    if (lockCode.length === 4) {
+      lockCode.split('').forEach(function(ch, i){
+        pinInputs[i].value = ch;
+        pinInputs[i].classList.add('filled');
+      });
+    }
+    
+    // Preview label tag updates
+    updatePreview();
+  }
+})();
+
 </script><script>
 // ===== RADIO STYLE CARDS =====
 var rsGrid = document.getElementById('radioStyleGrid');
@@ -669,6 +965,142 @@ async function createRadio(){
     btn.classList.remove('loading');lbl.style.display='flex';spn.style.display='none';
   }
 }
+
+
+// ===== EDIT MODE LOADER =====
+(function(){
+  var urlParams = new URLSearchParams(window.location.search);
+  var editParam = urlParams.get('edit');
+  if (!editParam) return;
+
+  editingId = editParam.trim();
+  
+  // Show edit PIN overlay
+  var overlay = document.getElementById('editAuthOverlay');
+  overlay.style.display = 'flex';
+  
+  var eInputs = [
+    document.getElementById('ePin0'), document.getElementById('ePin1'),
+    document.getElementById('ePin2'), document.getElementById('ePin3')
+  ];
+  
+  eInputs[0].focus();
+  
+  eInputs.forEach(function(inp, i){
+    inp.addEventListener('input', function(){
+      inp.value = inp.value.replace(/\D/g,'');
+      inp.classList.toggle('filled', inp.value.length === 1);
+      document.getElementById('editAuthError').textContent = '';
+      if (inp.value && i < 3) eInputs[i+1].focus();
+      else if (inp.value && i === 3) verifyEditPin();
+    });
+    inp.addEventListener('keydown', function(e){
+      if (e.key === 'Backspace' && !inp.value && i > 0) eInputs[i-1].focus();
+      if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); eInputs[i-1].focus(); }
+      if (e.key === 'ArrowRight' && i < 3) { e.preventDefault(); eInputs[i+1].focus(); }
+    });
+  });
+  
+  function getEditPin() { return eInputs.map(function(inp){return inp.value;}).join(''); }
+  
+  function verifyEditPin() {
+    var code = getEditPin();
+    if (code.length !== 4) return;
+    
+    document.getElementById('editAuthError').style.color = '#c084fc';
+    document.getElementById('editAuthError').textContent = 'Verifying lock code...';
+    
+    fetch('/api/edit-config/' + editingId + '?code=' + code)
+      .then(function(r) {
+        if (!r.ok) throw new Error('invalid');
+        return r.json();
+      })
+      .then(function(cfg) {
+        loadConfigForEditing(cfg);
+      })
+      .catch(function() {
+        document.getElementById('editAuthError').style.color = '#ef4444';
+        document.getElementById('editAuthError').textContent = 'Incorrect passcode!';
+        // Shake card
+        var card = document.getElementById('editAuthCard');
+        card.classList.add('shake');
+        setTimeout(function(){ card.classList.remove('shake'); }, 450);
+        // Clear
+        eInputs.forEach(function(inp){ inp.value = ''; inp.classList.remove('filled'); });
+        eInputs[0].focus();
+      });
+  }
+  
+  function loadConfigForEditing(cfg) {
+    // Hide auth modal
+    overlay.style.display = 'none';
+    
+    // Step 1: Photos
+    photos = (cfg.photos || []).map(function(p){
+      return { file: null, url: p.url, caption: p.caption };
+    });
+    renderGrid();
+    
+    // Step 2: Music
+    if (cfg.audioUrl) {
+      editingAudioUrl = cfg.audioUrl;
+      audioStart = cfg.audioStart || 0;
+      audioEnd   = cfg.audioEnd   || 0;
+      audioDur   = cfg.audioDur   || 0;
+      
+      document.getElementById('apName').textContent = 'Attached: ' + cfg.audioUrl.split('/').pop();
+      pAudio.src = cfg.audioUrl;
+      
+      pAudio.addEventListener('loadedmetadata', function(){
+        var dur = pAudio.duration || audioDur || 300;
+        trimStart.max = trimEnd.max = dur;
+        trimStart.value = audioStart;
+        trimEnd.value = audioEnd;
+        trimStartVal.textContent = fmtTime(audioStart);
+        trimEndVal.textContent = fmtTime(audioEnd);
+        apTotal.textContent = fmtTime(dur);
+        updateClipBadge();
+        document.getElementById('audioPlayerWrap').style.display = 'block';
+      }, {once:true});
+    }
+    
+    // Step 3: Design selectors
+    curStyle = cfg.radioStyle || 'kawaii';
+    curPattern = cfg.filmPattern || 'classic';
+    curFont = cfg.fontId || 'playful';
+    
+    // Update active classes
+    rsGrid.querySelectorAll('.sel-card').forEach(function(card){
+      card.classList.toggle('active', card.querySelector('.sel-name').textContent === (RADIO_STYLES.find(function(r){return r.id===curStyle;})||{}).name);
+    });
+    fpGrid.querySelectorAll('.fp-card').forEach(function(card){
+      card.classList.toggle('active', card.querySelector('.fp-name').textContent === (FILM_PATTERNS.find(function(r){return r.id===curPattern;})||{}).name);
+    });
+    fGrid.querySelectorAll('.font-btn2').forEach(function(btn){
+      btn.classList.toggle('active', btn.textContent === (FONTS.find(function(f){return f.id===curFont;})||{}).label);
+    });
+    
+    // Text inputs
+    document.getElementById('txtTitle').value = cfg.title || '';
+    document.getElementById('txtSub').value = cfg.tagline || '';
+    document.getElementById('txtCaption').value = cfg.captionDefault || '';
+    document.getElementById('txtKnob').value = cfg.knobLabel || '';
+    document.getElementById('txtHint').value = cfg.hint || '';
+    document.getElementById('lockQuestion').value = cfg.lockQuestion || '';
+    
+    // Passcode PIN inputs
+    lockCode = cfg.lockCode || '';
+    if (lockCode.length === 4) {
+      lockCode.split('').forEach(function(ch, i){
+        pinInputs[i].value = ch;
+        pinInputs[i].classList.add('filled');
+      });
+    }
+    
+    // Preview label tag updates
+    updatePreview();
+  }
+})();
 
 </script>
 </body>

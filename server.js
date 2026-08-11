@@ -128,24 +128,28 @@ app.post('/api/create',
   upload.fields([{ name: 'photos', maxCount: 30 }, { name: 'audio', maxCount: 1 }]),
   async (req, res) => {
     try {
-      const id       = uuidv4();
-      const config   = JSON.parse(req.body.config);
-      const captions = config.captions || [];
+      const config = JSON.parse(req.body.config);
+      const id = config.id ? String(config.id).trim() : uuidv4();
+      
       const photoUrls = [];
-
-      if (req.files['photos']) {
-        for (let i = 0; i < req.files['photos'].length; i++) {
-          const file = req.files['photos'][i];
+      const incomingPhotos = config.photos || [];
+      
+      // Merge new uploads and existing photo URLs
+      for (let i = 0; i < incomingPhotos.length; i++) {
+        const p = incomingPhotos[i];
+        if (p.isNew) {
+          const file = req.files['photos'][p.fileIdx];
           const ext  = path.extname(file.originalname) || '.jpg';
           const name = 'photo_' + i + ext;
           const url  = await uploadFile(file.buffer, name, file.mimetype, id);
-          const cap  = captions[i]
-            || file.originalname.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-          photoUrls.push({ url, caption: cap });
+          photoUrls.push({ url, caption: p.caption });
+        } else {
+          photoUrls.push({ url: p.url, caption: p.caption });
         }
       }
 
-      let audioUrl = null;
+      // Preserves existing audioUrl if no new audio is uploaded on edit
+      let audioUrl = config.audioUrl || null;
       if (req.files['audio']) {
         const file = req.files['audio'][0];
         const ext  = path.extname(file.originalname) || '.mp3';
@@ -154,7 +158,7 @@ app.post('/api/create',
 
       const finalConfig = {
         id,
-        createdAt:      Date.now(),
+        createdAt:      Date.now(), // refresh createdAt timestamp
         photos:         photoUrls,
         audioUrl,
         audioStart:     config.audioStart   || 0,
@@ -168,7 +172,7 @@ app.post('/api/create',
         knobLabel:      config.knobLabel    || 'tune',
         hint:           config.hint         || 'drag the knob to scrub \u2014 press \u266b to play',
         lockQuestion:   config.lockQuestion || '',
-        lockCode:       config.lockCode     || ''   // stored server-side; never returned to client
+        lockCode:       config.lockCode     || ''
       };
 
       await saveConfig(id, finalConfig);
@@ -224,6 +228,26 @@ app.post('/api/verify/:id', async (req, res) => {
     res.json({ ok: true, config: safeConfig });
   } catch (_) {
     res.status(410).json({ expired: true });
+  }
+});
+
+// ── GET /api/edit-config/:id ───────────────────────────────────────────────
+// Authenticated GET route. Returns the FULL config for editing.
+app.get('/api/edit-config/:id', async (req, res) => {
+  try {
+    const cfg = await getConfig(req.params.id);
+    if (isExpired(cfg)) return res.status(410).json({ expired: true });
+
+    const submitted = String(req.query.code || '').trim();
+    const stored    = String(cfg.lockCode  || '').trim();
+
+    if (submitted !== stored) {
+      return res.status(403).json({ error: 'Invalid lock code' });
+    }
+
+    res.json(cfg);
+  } catch (_) {
+    res.status(404).json({ error: 'Radio not found' });
   }
 });
 
