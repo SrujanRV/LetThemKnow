@@ -131,6 +131,13 @@ app.post('/api/create',
       const config = JSON.parse(req.body.config);
       const id = config.id ? String(config.id).trim() : uuidv4();
       
+      console.log('[create] incoming config:', JSON.stringify(config, null, 2));
+      console.log('[create] incoming photos:', config.photos ? config.photos.length : 0);
+      console.log('[create] received files:', req.files ? Object.keys(req.files) : 'none');
+      if (req.files && req.files['photos']) {
+        console.log('[create] photos files count:', req.files['photos'].length);
+      }
+
       const photoUrls = [];
       const incomingPhotos = config.photos || [];
       
@@ -147,6 +154,7 @@ app.post('/api/create',
           photoUrls.push({ url: p.url, caption: p.caption });
         }
       }
+      console.log('[create] built photoUrls:', JSON.stringify(photoUrls, null, 2));
 
       // Preserves existing audioUrl if no new audio is uploaded on edit
       let audioUrl = config.audioUrl || null;

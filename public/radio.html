@@ -280,7 +280,7 @@ body{
     document.getElementById('hintText').textContent  = cfg.hint || 'drag the knob to scrub \u2014 press \u266b to play';
 
     // Init core widget
-    RadioCore.init({
+    window.activeRadioWidget = RadioCore.init({
       photos:         cfg.photos || [],
       audioSrc:       cfg.audioUrl || null,
       audioStart:     cfg.audioStart || 0,
@@ -294,6 +294,9 @@ body{
     
     lockCard.style.display = 'none';
     radioWrapper.style.display = 'flex';
+    if (window.activeRadioWidget && window.activeRadioWidget.render) {
+      window.activeRadioWidget.render();
+    }
     setTimeout(function () {
       radioWrapper.style.opacity = '1';
     }, 50);

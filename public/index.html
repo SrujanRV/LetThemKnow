@@ -431,9 +431,16 @@ var FONTS = RadioCore.FONT_PAIRS;
 
 // ===== STEPS =====
 function goTo(n) {
+  document.querySelectorAll('.step-card').forEach(function(c){c.classList.remove('active');});
+  document.getElementById('step'+n).classList.add('active');
+  curStep = n;
+
   if (n === 4) {
     buildSummary();
     initPreviewRadio();
+    if (window.activeRadioWidget && window.activeRadioWidget.render) {
+      window.activeRadioWidget.render();
+    }
   } else {
     // If leaving step 4, stop preview audio
     var aud = document.getElementById('audio');
@@ -441,9 +448,6 @@ function goTo(n) {
     var pwr = document.getElementById('power');
     if (pwr) pwr.setAttribute('aria-pressed', 'false');
   }
-  document.querySelectorAll('.step-card').forEach(function(c){c.classList.remove('active');});
-  document.getElementById('step'+n).classList.add('active');
-  curStep = n;
   for (var i=1;i<=4;i++) {
     var sd = document.getElementById('sd'+i);
     sd.classList.remove('active','done');

@@ -111,6 +111,7 @@
   // ── main init ──────────────────────────────────────────────────────────────
   function init(opts) {
     opts = opts || {};
+    console.log('[RadioCore.init] opts:', JSON.stringify(opts, null, 2));
 
     // DOM refs
     var filmstrip   = document.getElementById('filmstrip');
