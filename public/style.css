@@ -251,3 +251,198 @@ body[data-film="polaroid"] .pol-cap{display:block;}
 .pin-digit:focus{border-color:#c084fc;box-shadow:0 0 0 3px rgba(192,132,252,.22);background:rgba(60,30,100,.6);}
 .pin-digit.filled{border-color:#a78bfa;color:#c084fc;}
 .lock-section{margin-top:32px;padding-top:24px;border-top:1px solid rgba(150,80,255,.18);}
+
+/* ── Landscape Mobile viewport optimization (max-height: 500px) ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    padding: 6px 10px !important;
+  }
+  
+  .container {
+    padding: 6px 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  .sparkle {
+    display: none !important;
+  }
+
+  /* Shrink Hero Section */
+  .hero {
+    margin-bottom: 2px !important;
+  }
+  .hero h1 {
+    font-size: clamp(1.1rem, 6vh, 1.6rem) !important;
+    margin: 0 0 1px !important;
+    -webkit-text-stroke: 1px #ffffff88 !important;
+    text-shadow: 1.5px 1.5px 0 rgba(255,255,255,.4) !important;
+  }
+  .hero p {
+    font-size: clamp(0.7rem, 4vh, 0.82rem) !important;
+  }
+
+  /* Shrink Radio Card */
+  .radio {
+    width: min(94vw, 560px) !important;
+    max-height: 72vh !important;
+    padding: 8px 16px 10px !important;
+    border-radius: 18px !important;
+    border-width: 2px !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,.15) !important;
+  }
+  
+  .stripe-trim {
+    left: 16px !important;
+    right: 16px !important;
+    top: 5px !important;
+    height: 3px !important;
+  }
+
+  .knob-dot {
+    width: 6px !important;
+    height: 6px !important;
+    box-shadow: 0 0 0 2px var(--trim2), 0 1px 2px rgba(0,0,0,.1) !important;
+  }
+  .knob-dot.tl { top: 8px !important; left: 8px !important; }
+  .knob-dot.tr { top: 8px !important; right: 8px !important; }
+  .knob-dot.bl { bottom: 8px !important; left: 8px !important; }
+  .knob-dot.br { bottom: 8px !important; right: 8px !important; }
+
+  /* Shrink Panel Layout */
+  .panel {
+    margin-top: 6px !important;
+    gap: 12px !important;
+  }
+
+  .screen-frame {
+    border-radius: 10px !important;
+    padding: 4px !important;
+  }
+
+  .screen {
+    height: 100px !important;
+    border-radius: 6px !important;
+  }
+
+  .sprocket-row {
+    height: 6px !important;
+    background: repeating-linear-gradient(90deg, var(--scr) 0 5px, #17101f 5px 11px) !important;
+  }
+  .sprocket-row span {
+    width: 4px !important;
+    height: 4px !important;
+    top: 1px !important;
+  }
+
+  .filmstrip {
+    top: 8px !important;
+    bottom: 8px !important;
+    gap: 6px !important;
+  }
+
+  /* Shrink knob column and knob */
+  .knob-col {
+    gap: 5px !important;
+  }
+
+  .knob-wrap {
+    width: 72px !important;
+    height: 72px !important;
+  }
+
+  .knob {
+    border-width: 3px !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,.2), inset 0 0 0 2px rgba(255,255,255,.5) !important;
+  }
+
+  .knob .grip {
+    top: 4px !important;
+    width: 3px !important;
+    height: 10px !important;
+  }
+
+  .knob::before {
+    inset: 22% !important;
+  }
+
+  .knob::after {
+    font-size: 0.85rem !important;
+  }
+
+  .label-plate {
+    font-size: 0.54rem !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .power {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.8rem !important;
+    border-width: 1.5px !important;
+  }
+  
+  .power[aria-pressed="true"] {
+    transform: scale(1.04) !important;
+  }
+
+  .rewind-btn {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.68rem !important;
+    border-width: 1.2px !important;
+  }
+
+  /* Shrink Grille */
+  .grille {
+    margin-top: 6px !important;
+    height: 24px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Shrink plate and scale */
+  .caption-plate {
+    margin-top: 4px !important;
+    font-size: 0.75rem !important;
+    min-height: 1.2em !important;
+  }
+
+  .dial-scale {
+    margin-top: 4px !important;
+    height: 12px !important;
+    border-radius: 6px !important;
+  }
+
+  /* Shrink Hint Text */
+  .hint {
+    margin-top: 4px !important;
+    font-size: 0.7rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Shrink Lock Card */
+  #lockCard {
+    padding: 14px 18px !important;
+    border-radius: 14px !important;
+    border-width: 1.5px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,.15) !important;
+  }
+  #lockCard div[style*="font-size:3.2rem"] {
+    font-size: 1.8rem !important;
+    margin-bottom: 4px !important;
+  }
+  #lockCard h2 {
+    font-size: 1.1rem !important;
+    margin-bottom: 8px !important;
+  }
+  #lockQuestionText {
+    margin-bottom: 10px !important;
+    font-size: 0.78rem !important;
+    min-height: auto !important;
+  }
+  .pin-digit {
+    width: 32px !important;
+    height: 40px !important;
+    font-size: 1.2rem !important;
+    border-radius: 8px !important;
+  }
+}
