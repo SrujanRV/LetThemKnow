@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>for you, always</title>
+<meta name="description" content="A love letter made with light, sound, and every memory of you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Baloo+2:wght@500;700&family=Pacifico&family=Dancing+Script:wght@600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Lobster&family=Satisfy&family=Comfortaa:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+/* Radio page layout */
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:26px;padding:40px 16px 60px;
+  font-family:var(--fb);color:var(--ink);overflow-x:hidden;
+  background:linear-gradient(120deg,var(--bg1),var(--bg2),var(--bg3),var(--bg4));
+  background-size:300% 300%;
+  animation:driftBg 18s ease-in-out infinite;
+  transition:background .8s,color .4s;
+}
+@keyframes driftBg{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+
+/* Loading overlay */
+.loading-overlay{
+  position:fixed;inset:0;background:rgba(10,5,25,.93);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:200;gap:16px;
+}
+.loading-overlay .spin{
+  width:48px;height:48px;
+  border:4px solid rgba(150,80,255,.3);border-top-color:#c084fc;
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+.loading-overlay p{color:#c084fc;font-family:'Poppins',sans-serif;font-size:1rem;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Lock card shaking */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+</style>
+</head>
+<body data-radio="kawaii" data-film="classic">
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spin"></div>
+  <p>Checking lock status&hellip;</p>
+</div>
+
+<!-- Gentle Expired Message Container (Hidden by default) -->
+<div id="expiredContainer" style="display:none; text-align:center; padding:40px 16px; max-width:480px; margin:0 auto; z-index:10;">
+  <div style="font-size:4.5rem; margin-bottom:20px;">⏳</div>
+  <h2 style="font-family:var(--fd); font-size:2.2rem; color:var(--glow); margin-bottom:12px;-webkit-text-stroke:1px #ffffffaa;">This radio has expired</h2>
+  <p style="font-size:1.05rem; opacity:.85; line-height:1.6; color:var(--ink); font-weight:600;">
+    Surprise radios only live for 48 hours for privacy and storage space.<br>You can ask them to create a new one!
+  </p>
+</div>
+
+<!-- Centered Lock Screen Card (Hidden by default) -->
+<div id="lockCard" style="display:none; width:min(90vw, 420px); background:rgba(255,255,255,0.15); backdrop-filter:blur(26px); -webkit-backdrop-filter:blur(26px); border-radius:28px; padding:36px 28px; border:2.5px solid rgba(255,255,255,0.45); box-shadow:0 24px 60px rgba(0,0,0,0.22); text-align:center; z-index:10; transition: transform 0.15s;">
+  <div style="font-size:3.2rem; margin-bottom:14px;">🔒</div>
+  <h2 style="font-family:var(--fd); font-size:1.8rem; color:var(--glow); margin:0 0 16px;-webkit-text-stroke:1px #ffffffaa;text-shadow:2px 2px 0 rgba(255,255,255,.45);">Answer to unlock</h2>
+  
+  <p id="lockQuestionText" style="font-size:0.95rem; font-weight:600; line-height:1.6; margin:0 0 24px; color:var(--ink); min-height:40px; opacity:0.85;"></p>
+  
+  <div style="display:flex; justify-content:center; gap:12px; margin-bottom:16px;">
+    <input class="pin-digit" id="rPin0" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+    <input class="pin-digit" id="rPin1" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+    <input class="pin-digit" id="rPin2" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+    <input class="pin-digit" id="rPin3" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+  </div>
+  
+  <div id="lockError" style="color:#ef4444; font-size:0.85rem; font-weight:700; min-height:18px; margin-top:8px;"></div>
+</div>
+
+<!-- Main Radio Container (Hidden by default, fades in on successful verify) -->
+<div id="radioWrapper" style="display:none; flex-direction:column; align-items:center; gap:26px; width:100%; transition: opacity 0.6s ease; opacity: 0;">
+  <span class="sparkle" style="top:8%;left:8%;">&#10024;</span>
+  <span class="sparkle" style="top:14%;right:10%;animation-delay:1.2s;">&#128151;</span>
+  <span class="sparkle" style="bottom:10%;left:12%;animation-delay:2.4s;">&#11088;</span>
+  <span class="sparkle" style="bottom:16%;right:8%;animation-delay:3.1s;">&#10024;</span>
+
+  <div class="hero">
+    <h1 id="heroTitle">for you, always</h1>
+    <p id="heroSub">turn the knob &mdash; every notch is a memory</p>
+  </div>
+
+  <div class="radio">
+    <span class="stripe-trim"></span>
+    <span class="knob-dot tl"></span><span class="knob-dot tr"></span>
+    <span class="knob-dot bl"></span><span class="knob-dot br"></span>
+    <div class="panel">
+      <div>
+        <div class="screen-frame">
+          <div class="screen">
+            <div class="sprocket-row top" id="sprocketTop"></div>
+            <div class="filmstrip" id="filmstrip"></div>
+            <div class="sprocket-row bottom" id="sprocketBottom"></div>
+          </div>
+        </div>
+        <div class="caption-plate" id="caption">loading&hellip;</div>
+        <div class="dial-scale"><div class="ticks"></div><div class="needle" id="needle"></div></div>
+      </div>
+      <div class="knob-col">
+        <div class="knob-wrap">
+          <button class="knob" id="knob"
+            role="slider" aria-label="Scrub through the film"
+            aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+            tabindex="0">
+            <span class="grip"></span>
+          </button>
+        </div>
+        <div class="label-plate" id="tuneLabel">tune</div>
+        <button class="power" id="power" aria-pressed="false" aria-label="Play">&#9835;</button>
+        <button class="rewind-btn" id="rewindBtn" title="Rewind to start">&#9198;</button>
+      </div>
+    </div>
+    <div class="grille"></div>
+  </div>
+
+  <div class="hint" id="hintText">drag the knob to scrub &mdash; press &#9835; to play with music</div>
+</div>
+
+<audio id="audio"></audio>
+
+<script src="/radio-core.js"></script>
+<script>
+(function () {
+  var id = window.location.pathname.split('/').pop();
+  var pinInputs = [
+    document.getElementById('rPin0'), document.getElementById('rPin1'),
+    document.getElementById('rPin2'), document.getElementById('rPin3')
+  ];
+
+  // 1. Fetch Lock Screen Gate Info
+  fetch('/api/gate/' + id)
+    .then(function (r) {
+      if (r.status === 410) throw new Error('expired');
+      if (!r.ok) throw new Error('error');
+      return r.json();
+    })
+    .then(function (res) {
+      if (res.expired) {
+        showExpired();
+      } else {
+        showLockScreen(res.question);
+      }
+    })
+    .catch(function () {
+      showExpired();
+    });
+
+  function showExpired() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('expiredContainer').style.display = 'block';
+  }
+
+  function showLockScreen(question) {
+    document.getElementById('loadingOverlay').style.display = 'none';
+    document.getElementById('lockQuestionText').textContent = question || 'Secret question was left blank. Answer with the PIN code to unlock:';
+    document.getElementById('lockCard').style.display = 'block';
+    pinInputs[0].focus();
+    setupPinHandlers();
+  }
+
+  // 2. PIN Digits setup
+  function setupPinHandlers() {
+    pinInputs.forEach(function (inp, i) {
+      inp.addEventListener('input', function () {
+        inp.value = inp.value.replace(/\D/g, '');
+        inp.classList.toggle('filled', inp.value.length === 1);
+        document.getElementById('lockError').textContent = '';
+        if (inp.value && i < 3) {
+          pinInputs[i + 1].focus();
+        } else if (inp.value && i === 3) {
+          submitPin();
+        }
+      });
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace' && !inp.value && i > 0) {
+          pinInputs[i - 1].focus();
+        }
+        if (e.key === 'ArrowLeft' && i > 0) {
+          e.preventDefault();
+          pinInputs[i - 1].focus();
+        }
+        if (e.key === 'ArrowRight' && i < 3) {
+          e.preventDefault();
+          pinInputs[i + 1].focus();
+        }
+      });
+      inp.addEventListener('paste', function (e) {
+        e.preventDefault();
+        var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 4);
+        text.split('').forEach(function (ch, j) {
+          if (j + i < 4) {
+            pinInputs[j + i].value = ch;
+            pinInputs[j + i].classList.add('filled');
+          }
+        });
+        var next = Math.min(3, i + text.length - 1);
+        pinInputs[next].focus();
+        if (text.length === 4 - i) submitPin();
+      });
+    });
+  }
+
+  function getPinCode() {
+    return pinInputs.map(function (inp) { return inp.value; }).join('');
+  }
+
+  // 3. Verify Code
+  function submitPin() {
+    var code = getPinCode();
+    if (code.length !== 4) return;
+
+    fetch('/api/verify/' + id, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    })
+    .then(function (r) {
+      if (r.status === 410) {
+        showExpired();
+        throw new Error('expired');
+      }
+      return r.json();
+    })
+    .then(function (res) {
+      if (res.ok) {
+        unlockRadio(res.config);
+      } else {
+        shakeLockCard();
+      }
+    })
+    .catch(function (err) {
+      if (err.message !== 'expired') {
+        document.getElementById('lockError').textContent = 'An error occurred. Please try again.';
+      }
+    });
+  }
+
+  function shakeLockCard() {
+    var card = document.getElementById('lockCard');
+    card.classList.add('shake');
+    document.getElementById('lockError').textContent = 'Wrong lock code. Try again!';
+    setTimeout(function () {
+      card.classList.remove('shake');
+    }, 450);
+    // Clear code and refocus first input
+    pinInputs.forEach(function (inp) {
+      inp.value = '';
+      inp.classList.remove('filled');
+    });
+    pinInputs[0].focus();
+  }
+
+  // 4. Smooth Cross-Fade and Render Radio
+  function unlockRadio(cfg) {
+    // Theme + font + film pattern
+    RadioCore.applyTheme(cfg.radioStyle);
+    document.body.setAttribute('data-film', cfg.filmPattern || 'classic');
+    RadioCore.applyFont(cfg.fontId);
+
+    // Text overrides
+    document.getElementById('heroTitle').textContent = cfg.title || 'for you, always';
+    document.title = cfg.title || 'for you, always';
+    document.getElementById('heroSub').textContent   = cfg.tagline || 'turn the knob \u2014 every notch is a memory';
+    document.getElementById('tuneLabel').textContent = cfg.knobLabel || 'tune';
+    document.getElementById('hintText').textContent  = cfg.hint || 'drag the knob to scrub \u2014 press \u266b to play';
+
+    // Init core widget
+    RadioCore.init({
+      photos:         cfg.photos || [],
+      audioSrc:       cfg.audioUrl || null,
+      audioStart:     cfg.audioStart || 0,
+      audioEnd:       cfg.audioEnd   || 0,
+      captionDefault: cfg.captionDefault || 'press play and turn the dial\u2026'
+    });
+
+    // Cross-fade animation
+    var lockCard = document.getElementById('lockCard');
+    var radioWrapper = document.getElementById('radioWrapper');
+    
+    lockCard.style.display = 'none';
+    radioWrapper.style.display = 'flex';
+    setTimeout(function () {
+      radioWrapper.style.opacity = '1';
+    }, 50);
+  }
+}());
+</script>
+</body>
+</html>

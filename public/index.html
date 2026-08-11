@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Radio Surprise Studio — Build Your Radio</title>
+<meta name="description" content="Create a personalised radio with photos and music as a surprise for someone special.">
+<link rel="stylesheet" href="/style.css">
+<script src="/radio-core.js"></script>
+</head>
+<body>
+<div class="page-bg"></div>
+<header class="site-header">
+  <div class="logo">Radio Surprise <span>Studio</span></div>
+  <div style="font-size:.78rem;color:#7c5ccc;">build something beautiful ✦</div>
+</header>
+<main class="container">
+  <!-- Steps bar -->
+  <div class="steps-bar" id="stepsBar">
+    <div class="step-item"><div class="step-dot active" id="sd1" style="position:relative;">1<span class="step-label">Photos</span></div></div>
+    <div class="step-item"><div class="step-line" id="sl1"></div><div class="step-dot" id="sd2" style="position:relative;">2<span class="step-label">Music</span></div></div>
+    <div class="step-item"><div class="step-line" id="sl2"></div><div class="step-dot" id="sd3" style="position:relative;">3<span class="step-label">Design</span></div></div>
+    <div class="step-item"><div class="step-line" id="sl3"></div><div class="step-dot" id="sd4" style="position:relative;">4<span class="step-label">Publish</span></div></div>
+  </div>
+
+  <!-- STEP 1: Photos -->
+  <div class="step-card active" id="step1">
+    <div class="card">
+      <div class="card-title">&#128248; Add her photos</div>
+      <div class="card-sub">Upload and arrange them in the order you want them to appear on the film reel.</div>
+      <div class="upload-zone" id="photoZone">
+        <input type="file" id="photosInput" accept="image/*" multiple />
+        <div class="upload-icon">&#128247;</div>
+        <p><strong>Click to browse</strong> or drag &amp; drop photos here</p>
+        <p style="margin-top:6px;font-size:.78rem;">JPG, PNG, WEBP &mdash; up to 20 photos</p>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;min-height:22px;">
+        <div class="drag-hint" id="dragHint" style="display:none;margin:0;">&#9776; Drag to reorder &nbsp;&bull;&nbsp; click caption to rename</div>
+        <div id="photoCount" style="display:none;font-size:.75rem;font-weight:700;color:#c084fc;background:rgba(120,60,220,.25);border:1px solid rgba(150,80,255,.35);border-radius:20px;padding:3px 12px;margin-left:auto;"></div>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+    </div>
+    <div class="nav-bar">
+      <div></div>
+      <button class="btn-next" id="next1" onclick="goTo(2)" disabled>Photos &amp; order &#8594;</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Music -->
+  <div class="step-card" id="step2">
+    <div class="card">
+      <div class="card-title">&#9835; Add the song</div>
+      <div class="card-sub">Upload a song and trim exactly the part you want to play. Then preview it.</div>
+      <div class="upload-zone" id="audioZone">
+        <input type="file" id="audioInput" accept="audio/*" />
+        <div class="upload-icon">&#127925;</div>
+        <p><strong>Click to browse</strong> or drag &amp; drop a song</p>
+        <p style="margin-top:6px;font-size:.78rem;">MP3, WAV, OGG, M4A &mdash; up to 50MB</p>
+      </div>
+      <div id="audioPlayerWrap" style="display:none">
+        <div class="audio-player">
+          <div class="ap-name">&#9835; <span id="apName">song.mp3</span></div>
+          <div class="ap-controls">
+            <button class="ap-btn" id="apPlay" title="Preview clip">&#9654;</button>
+            <div class="progress-bar" id="apBar"><div class="progress-fill" id="apFill" style="width:0%"></div></div>
+            <div class="ap-time"><span id="apCur">0:00</span> / <span id="apTotal">0:00</span></div>
+          </div>
+          <div class="trim-section">
+            <div style="font-size:.78rem;color:#9d7fc4;margin-bottom:8px;font-weight:600;">&#9986; Trim clip range</div>
+            <div class="trim-row"><label>Start</label><input type="range" id="trimStart" min="0" max="100" step="0.1" value="0" /><span class="trim-time" id="trimStartVal">0:00</span></div>
+            <div class="trim-row"><label>End</label><input type="range" id="trimEnd" min="0" max="100" step="0.1" value="100" /><span class="trim-time" id="trimEndVal">0:00</span></div>
+            <div style="text-align:center;margin-top:10px;"><span class="clip-badge" id="clipBadge">Full clip</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;font-size:.8rem;color:#5a3f80;text-align:center;">Music is optional &mdash; the radio also works without a song.</div>
+    </div>
+    <div class="nav-bar">
+      <button class="btn-back" onclick="goTo(1)">&#8592; Photos</button>
+      <button class="btn-next" onclick="goTo(3)">Design &#8594;</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Design -->
+  <div class="step-card" id="step3">
+    <div class="card">
+      <div class="card-title">&#10024; Design the radio</div>
+      <div class="card-sub">Pick a style and film pattern, then personalise every word she sees.</div>
+
+      <div class="step3-layout">
+        <!-- ── LEFT: all selectors ── -->
+        <div class="step3-left">
+          <div class="sec-label">Radio style</div>
+          <div class="sel-grid" id="radioStyleGrid"></div>
+
+          <div class="sec-label" style="margin-top:28px;">Film reel pattern</div>
+          <div class="film-pattern-grid" id="filmPatternGrid"></div>
+
+          <div class="sec-label" style="margin-top:28px;">Font</div>
+          <div class="font-grid" id="fontGrid"></div>
+
+          <div class="sec-label" style="margin-top:28px;">Personalise the text</div>
+          <div class="txt-row"><label>Big heading (what she sees first)</label><input type="text" id="txtTitle" placeholder="for you, always" /></div>
+          <div class="txt-row"><label>Tagline below heading</label><input type="text" id="txtSub" placeholder="turn the knob &mdash; every notch is a memory" /></div>
+          <div class="txt-row"><label>Default screen caption</label><input type="text" id="txtCaption" placeholder="press play and turn the dial&hellip;" /></div>
+          <div class="txt-row"><label>Knob label</label><input type="text" id="txtKnob" placeholder="tune" /></div>
+          <div class="txt-row"><label>Bottom hint</label><input type="text" id="txtHint" placeholder="drag the knob to scrub &mdash; press &#9835; to play" /></div>
+
+          <!-- ── LOCK SCREEN ── -->
+          <div class="lock-section">
+            <div class="sec-label" style="border-color:rgba(212,175,55,.4);color:#D4AF37;">&#128274; Lock Screen</div>
+            <p style="font-size:.82rem;color:#9d7fc4;margin:0 0 16px;line-height:1.6;">Set a secret question and a 4&#8209;digit code &mdash; she will need to enter it to unlock the radio.</p>
+            <div class="txt-row"><label>Your secret question</label><input type="text" id="lockQuestion" placeholder="e.g. what song was playing when we first danced?" /></div>
+            <div style="text-align:center;margin-top:16px;">
+              <label style="display:block;font-size:.78rem;font-weight:600;color:#9d7fc4;margin-bottom:8px;letter-spacing:.3px;">4&#8209;digit unlock code</label>
+              <div class="pin-row">
+                <input class="pin-digit" id="pin0" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+                <input class="pin-digit" id="pin1" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+                <input class="pin-digit" id="pin2" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+                <input class="pin-digit" id="pin3" maxlength="1" type="text" inputmode="numeric" autocomplete="off" />
+              </div>
+              <div id="pinError" style="color:#f87171;font-size:.78rem;margin-top:10px;display:none;">&#9888; Please enter all 4 digits before continuing.</div>
+            </div>
+          </div>
+        </div><!-- /step3-left -->
+
+        <!-- ── RIGHT: live mini preview ── -->
+        <div class="step3-preview">
+          <div class="preview-label-top">Live Preview</div>
+          <div id="livePreviewFrame" data-radio="kawaii">
+            <div class="radio" style="padding:10px 10px 14px;border-radius:22px;">
+              <span class="stripe-trim" style="left:10px;right:10px;top:6px;height:4px;"></span>
+              <span class="knob-dot tl" style="top:8px;left:8px;width:7px;height:7px;"></span>
+              <span class="knob-dot tr" style="top:8px;right:8px;width:7px;height:7px;"></span>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:10px;align-items:center;">
+                <div class="screen-frame" style="padding:4px;border-radius:10px;">
+                  <div class="screen" style="height:66px;border-radius:6px;">
+                    <div class="filmstrip" style="position:absolute;top:6px;bottom:6px;left:4px;display:flex;gap:4px;">
+                      <div class="frame" style="width:54px;flex:0 0 auto;opacity:.95;"></div>
+                      <div class="frame" style="width:54px;flex:0 0 auto;opacity:.5;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+                  <div class="knob" style="width:40px;height:40px;border:3px solid #fff;border-radius:50%;touch-action:none;"></div>
+                  <div class="power" style="width:26px;height:26px;font-size:.6rem;border-width:2px;pointer-events:none;">&#9835;</div>
+                </div>
+              </div>
+              <div class="grille" style="margin-top:8px;height:18px;border-radius:7px;"></div>
+            </div>
+          </div>
+          <div class="preview-tag" id="previewTag"><strong>Kawaii Pink</strong><br>Classic film</div>
+        </div><!-- /step3-preview -->
+      </div><!-- /step3-layout -->
+    </div><!-- /card -->
+    <div class="nav-bar">
+      <button class="btn-back" onclick="goTo(2)">&#8592; Music</button>
+      <button class="btn-next" onclick="goToDesignDone()">Preview &#8594;</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Publish -->
+  <div class="step-card" id="step4">
+    <div class="card" id="publishCard">
+      <div class="card-title">&#10022; Ready to create</div>
+      <div class="card-sub">Review your choices below, test the live radio player, then hit <strong>Create Radio ✓</strong>.</div>
+      
+      <!-- Full Live Radio Player Preview -->
+      <div id="previewRadioWrapper" style="display: flex; flex-direction: column; align-items: center; gap: 20px; margin-bottom: 30px;">
+        <div class="radio">
+          <span class="stripe-trim"></span>
+          <span class="knob-dot tl"></span><span class="knob-dot tr"></span>
+          <span class="knob-dot bl"></span><span class="knob-dot br"></span>
+          <div class="panel">
+            <div>
+              <div class="screen-frame">
+                <div class="screen">
+                  <div class="sprocket-row top" id="sprocketTop"></div>
+                  <div class="filmstrip" id="filmstrip"></div>
+                  <div class="sprocket-row bottom" id="sprocketBottom"></div>
+                </div>
+              </div>
+              <div class="caption-plate" id="caption">loading&hellip;</div>
+              <div class="dial-scale"><div class="ticks"></div><div class="needle" id="needle"></div></div>
+            </div>
+            <div class="knob-col">
+              <div class="knob-wrap">
+                <button class="knob" id="knob"
+                  role="slider" aria-label="Scrub through the film"
+                  aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                  tabindex="0">
+                  <span class="grip"></span>
+                </button>
+              </div>
+              <div class="label-plate" id="tuneLabel">tune</div>
+              <button class="power" id="power" aria-pressed="false" aria-label="Play">&#9835;</button>
+              <button class="rewind-btn" id="rewindBtn" title="Rewind to start">&#9198;</button>
+            </div>
+          </div>
+          <div class="grille"></div>
+        </div>
+        <div class="hint" id="hintText">drag the knob to scrub &mdash; press &#9835; to play</div>
+      </div>
+
+      <div id="summaryBox" style="background:rgba(60,20,120,.25);border:1px solid rgba(150,80,255,.2);border-radius:16px;padding:20px;margin-bottom:24px;font-size:.85rem;color:#c084fc;line-height:2;"></div>
+      
+      <div style="text-align:center;">
+        <button class="btn-create" id="createBtn" onclick="createRadio()">
+          <span id="createBtnLabel">&#10022; Create Radio &amp; Get Link</span>
+          <div class="spinner" id="createSpinner" style="display:none"></div>
+        </button>
+        <div id="createError" style="color:#f87171;font-size:.82rem;margin-top:14px;display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Success Panel -->
+    <div class="card" id="successPanel" style="display: none; text-align: center;">
+      <div class="card-title" style="color: #10b981;">🎉 Radio Created Successfully!</div>
+      <div class="card-sub">Your surprise radio is ready to share.</div>
+      
+      <div style="background: rgba(16, 185, 129, 0.1); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 16px; padding: 24px; margin: 24px 0;">
+        <p style="font-size: 0.9rem; color: #a7f3d0; margin: 0 0 12px; font-weight: 600;">Shareable Link:</p>
+        <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(150,80,255,0.25);">
+          <input type="text" id="successLinkInput" readonly style="flex: 1; background: transparent; border: none; color: #34d399; font-family: monospace; font-size: 0.9rem; outline: none; box-shadow: none;" />
+          <button id="successCopyBtn" onclick="copySuccessLink()" style="background: #34d399; border: none; color: #064e3b; font-weight: 700; border-radius: 6px; padding: 6px 14px; cursor: pointer; transition: all 0.2s; font-family: 'Poppins', sans-serif;">Copy Link</button>
+        </div>
+      </div>
+
+      <p style="font-size: 0.85rem; color: #9d7fc4; line-height: 1.6; margin: 20px 0;">
+        Send this link to them &mdash; they'll need to answer your question to unlock it, and it expires in 48 hours.
+      </p>
+
+      <button class="btn-create" onclick="resetWizard()" style="background: linear-gradient(135deg, #7c3aed, #a78bfa); margin-top: 10px; display: inline-flex;">
+        Start a new one
+      </button>
+    </div>
+
+    <div class="nav-bar">
+      <button class="btn-back" id="previewBackButton" onclick="goTo(3)">&#8592; Design</button>
+      <div></div>
+    </div>
+  </div>
+</main>
+<audio id="audio" style="display:none"></audio>
+<audio id="previewAudio" style="display:none"></audio><script>
+// ===== DATA =====
+var photos = []; // {file, url, caption}
+var audioFile = null;
+var audioStart = 0, audioEnd = 0, audioDur = 0;
+var curStyle = 'kawaii', curPattern = 'classic', curFont = 'playful';
+var lockQuestion = '', lockCode = '';
+var curStep = 1;
+
+// Use RadioCore data so themes are defined in exactly one place
+var RADIO_STYLES = RadioCore.RADIO_THEMES;
+
+// Film pattern ids must match the data-film CSS selectors in style.css
+var FILM_PATTERNS = [
+  {id:'classic',      name:'Classic',  bg:'#1a0d2e'},
+  {id:'polaroid',     name:'Polaroid', bg:'#f5f0e8'},
+  {id:'vintage-film', name:'Vintage',  bg:'#3d2a0a'},
+  {id:'neon-frames',  name:'Neon',     bg:'#050510'},
+  {id:'minimal',      name:'Minimal',  bg:'#f8f4ff'}
+];
+
+// Use RadioCore data — one source of truth for all font pairs
+var FONTS = RadioCore.FONT_PAIRS;
+
+// ===== STEPS =====
+function goTo(n) {
+  if (n === 4) {
+    buildSummary();
+    initPreviewRadio();
+  } else {
+    // If leaving step 4, stop preview audio
+    var aud = document.getElementById('audio');
+    if (aud) aud.pause();
+    var pwr = document.getElementById('power');
+    if (pwr) pwr.setAttribute('aria-pressed', 'false');
+  }
+  document.querySelectorAll('.step-card').forEach(function(c){c.classList.remove('active');});
+  document.getElementById('step'+n).classList.add('active');
+  curStep = n;
+  for (var i=1;i<=4;i++) {
+    var sd = document.getElementById('sd'+i);
+    sd.classList.remove('active','done');
+    if (i < n) sd.classList.add('done');
+    else if (i === n) sd.classList.add('active');
+    if (i < 4) {var sl=document.getElementById('sl'+i); sl.classList.toggle('done', i < n);}
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+
+// ===== PHOTOS =====
+var photoZone = document.getElementById('photoZone');
+var photosInput = document.getElementById('photosInput');
+var photoGrid = document.getElementById('photoGrid');
+
+photoZone.addEventListener('dragover',function(e){e.preventDefault();photoZone.classList.add('drag-over');});
+photoZone.addEventListener('dragleave',function(){photoZone.classList.remove('drag-over');});
+photoZone.addEventListener('drop',function(e){e.preventDefault();photoZone.classList.remove('drag-over');addPhotos(Array.from(e.dataTransfer.files).filter(function(f){return f.type.startsWith('image/');}));});
+photosInput.addEventListener('change',function(e){addPhotos(Array.from(e.target.files));e.target.value='';});
+
+function addPhotos(files) {
+  files.forEach(function(f){
+    if(photos.length >= 20) return;
+    photos.push({file:f, url:URL.createObjectURL(f), caption:f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ')});
+  });
+  renderGrid();
+}
+
+function renderGrid() {
+  photoGrid.innerHTML='';
+  var hasPhotos = photos.length > 0;
+  document.getElementById('dragHint').style.display  = hasPhotos ? 'block' : 'none';
+  document.getElementById('next1').disabled           = !hasPhotos;
+  var countEl = document.getElementById('photoCount');
+  countEl.style.display   = hasPhotos ? 'inline-block' : 'none';
+  countEl.textContent     = photos.length + ' / 20 photo' + (photos.length === 1 ? '' : 's');
+  photos.forEach(function(p, i){
+    var card = document.createElement('div');
+    card.className='photo-card'; card.draggable=true; card.dataset.idx=i;
+    card.innerHTML='<img src="'+p.url+'" alt=""><div class="ph-num">'+(i+1)+'</div><button class="ph-del" title="Remove" onclick="removePhoto('+i+')">&#10005;</button><div class="ph-cap"><input value="'+p.caption+'" placeholder="caption..." onchange="photos['+i+'].caption=this.value" /></div>';
+    card.addEventListener('dragstart',function(e){e.dataTransfer.setData('text/plain',i);card.classList.add('dragging');});
+    card.addEventListener('dragend',function(){card.classList.remove('dragging');document.querySelectorAll('.photo-card').forEach(function(c){c.classList.remove('drag-target');});});
+    card.addEventListener('dragover',function(e){e.preventDefault();card.classList.add('drag-target');});
+    card.addEventListener('dragleave',function(){card.classList.remove('drag-target');});
+    card.addEventListener('drop',function(e){e.preventDefault();card.classList.remove('drag-target');var from=parseInt(e.dataTransfer.getData('text/plain'));if(from===i)return;var moved=photos.splice(from,1)[0];photos.splice(i,0,moved);renderGrid();});
+    photoGrid.appendChild(card);
+  });
+}
+function removePhoto(i){ URL.revokeObjectURL(photos[i].url); photos.splice(i,1); renderGrid(); }
+
+// ===== AUDIO =====
+var audioInput = document.getElementById('audioInput');
+var audioZone = document.getElementById('audioZone');
+var pAudio = document.getElementById('previewAudio');
+var apPlay = document.getElementById('apPlay');
+var apFill = document.getElementById('apFill');
+var apCur = document.getElementById('apCur');
+var apTotal = document.getElementById('apTotal');
+var trimStart = document.getElementById('trimStart');
+var trimEnd = document.getElementById('trimEnd');
+var trimStartVal = document.getElementById('trimStartVal');
+var trimEndVal = document.getElementById('trimEndVal');
+var clipBadge = document.getElementById('clipBadge');
+var isPreviewPlaying = false;
+var previewStop = null;
+
+function fmtTime(s){var m=Math.floor(s/60),sc=Math.floor(s%60);return m+':'+(sc<10?'0':'')+sc;}
+
+audioZone.addEventListener('dragover',function(e){e.preventDefault();audioZone.classList.add('drag-over');});
+audioZone.addEventListener('dragleave',function(){audioZone.classList.remove('drag-over');});
+audioZone.addEventListener('drop',function(e){e.preventDefault();audioZone.classList.remove('drag-over');var f=e.dataTransfer.files[0];if(f&&f.type.startsWith('audio/'))loadAudio(f);});
+audioInput.addEventListener('change',function(e){if(e.target.files[0])loadAudio(e.target.files[0]);});
+
+function loadAudio(f) {
+  audioFile = f;
+  pAudio.src = URL.createObjectURL(f);
+  document.getElementById('apName').textContent = f.name;
+  pAudio.addEventListener('loadedmetadata', function(){
+    audioDur = pAudio.duration;
+    audioStart = 0; audioEnd = audioDur;
+    trimStart.max = trimEnd.max = audioDur;
+    trimStart.value = 0; trimEnd.value = audioDur;
+    trimStartVal.textContent = fmtTime(0);
+    trimEndVal.textContent = fmtTime(audioDur);
+    apTotal.textContent = fmtTime(audioDur);
+    updateClipBadge();
+    document.getElementById('audioPlayerWrap').style.display = 'block';
+  }, {once:true});
+}
+
+function updateClipBadge(){
+  var dur = audioEnd - audioStart;
+  clipBadge.textContent = fmtTime(audioStart)+' \u2192 '+fmtTime(audioEnd)+' (\u2248 '+fmtTime(dur)+')';
+}
+
+trimStart.addEventListener('input',function(){audioStart=Math.min(parseFloat(this.value),audioEnd-0.5);this.value=audioStart;trimStartVal.textContent=fmtTime(audioStart);updateClipBadge();});
+trimEnd.addEventListener('input',function(){audioEnd=Math.max(parseFloat(this.value),audioStart+0.5);this.value=audioEnd;trimEndVal.textContent=fmtTime(audioEnd);updateClipBadge();});
+
+apPlay.addEventListener('click',function(){
+  if(isPreviewPlaying){
+    pAudio.pause();
+    isPreviewPlaying=false;apPlay.innerHTML='&#9654;';apPlay.classList.remove('playing');
+    if(previewStop)clearTimeout(previewStop);
+  }else{
+    pAudio.currentTime=audioStart;
+    pAudio.play().catch(function(){});
+    isPreviewPlaying=true;apPlay.innerHTML='&#9646;&#9646;';apPlay.classList.add('playing');
+    var clipLen=(audioEnd-audioStart)*1000;
+    previewStop=setTimeout(function(){pAudio.pause();isPreviewPlaying=false;apPlay.innerHTML='&#9654;';apPlay.classList.remove('playing');},clipLen);
+  }
+});
+pAudio.addEventListener('timeupdate',function(){
+  var t=pAudio.currentTime;
+  var prog=(t-audioStart)/(audioEnd-audioStart);
+  apFill.style.width=Math.max(0,Math.min(100,prog*100))+'%';
+  apCur.textContent=fmtTime(t);
+});
+</script><script>
+// ===== RADIO STYLE CARDS =====
+var rsGrid = document.getElementById('radioStyleGrid');
+RADIO_STYLES.forEach(function(s){
+  var c = document.createElement('div'); c.className='sel-card'+(s.id===curStyle?' active':'');
+  var shellBg = s.body || s.bg;
+  c.innerHTML='<div class="sel-preview" style="background:'+s.bg+'"><div style="width:68%;height:46px;border-radius:6px;background:'+shellBg+';position:relative;box-shadow:0 2px 10px rgba(0,0,0,.4);"><div style="position:absolute;top:6px;left:6px;right:26px;bottom:6px;border-radius:3px;background:rgba(0,0,0,.5)"></div><div style="position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:'+s.knob+';border:2px solid rgba(255,255,255,.5)"></div></div></div><div class="sel-name">'+s.name+'</div>';
+  c.addEventListener('click',function(){
+    curStyle=s.id;
+    rsGrid.querySelectorAll('.sel-card').forEach(function(x){x.classList.remove('active');});
+    c.classList.add('active');
+    updatePreview();
+  });
+  rsGrid.appendChild(c);
+});
+
+
+// ===== FILM PATTERN CARDS =====
+var fpGrid = document.getElementById('filmPatternGrid');
+var FP_ICONS = {
+  classic:'<div style="display:flex;flex-direction:column;gap:1px;width:100%;height:100%;padding:4px;"><div style="height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div><div style="flex:1;display:flex;gap:2px;"><div style="width:22px;background:rgba(100,80,160,.6);border-radius:2px;"></div><div style="width:22px;background:rgba(80,60,140,.6);border-radius:2px;"></div><div style="flex:1;background:rgba(60,40,120,.6);border-radius:2px;"></div></div><div style="height:4px;background:rgba(255,255,255,.15);border-radius:2px"></div></div>',
+  polaroid:'<div style="display:flex;gap:3px;padding:4px;height:100%;align-items:center;"><div style="width:22px;height:90%;background:white;border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.2);padding:2px 2px 6px;overflow:hidden;"><div style="width:100%;height:80%;background:#d4b8ff;border-radius:1px"></div></div><div style="width:22px;height:90%;background:white;border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.2);padding:2px 2px 6px;overflow:hidden;"><div style="width:100%;height:80%;background:#ffd6e8;border-radius:1px"></div></div><div style="width:22px;height:90%;background:white;border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.2);padding:2px 2px 6px;overflow:hidden;"><div style="width:100%;height:80%;background:#b8e8ff;border-radius:1px"></div></div></div>',
+  'vintage-film':'<div style="position:relative;display:flex;gap:2px;padding:4px;height:100%;align-items:center;"><div style="width:22px;height:85%;background:#a07040;border-radius:2px;filter:sepia(1)"></div><div style="width:22px;height:85%;background:#8b6030;border-radius:2px;filter:sepia(1)"></div><div style="flex:1;height:85%;background:#6b4a20;border-radius:2px;filter:sepia(1)"></div><div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.06) 3px,rgba(0,0,0,.06) 4px);pointer-events:none;border-radius:4px"></div></div>',
+  'neon-frames':'<div style="display:flex;gap:3px;padding:5px;height:100%;align-items:center;"><div style="width:20px;height:85%;background:#000820;border-radius:2px;box-shadow:0 0 6px #00f5ff,inset 0 0 0 1.5px #00f5ff"></div><div style="width:20px;height:85%;background:#000820;border-radius:2px;box-shadow:0 0 6px #ff2d78,inset 0 0 0 1.5px #ff2d78"></div><div style="flex:1;height:85%;background:#000820;border-radius:2px;box-shadow:0 0 6px #b400ff,inset 0 0 0 1.5px #b400ff"></div></div>',
+  minimal:'<div style="display:flex;gap:4px;padding:6px;height:100%;align-items:center;"><div style="width:20px;height:80%;background:#e8e0f8;border-radius:3px"></div><div style="width:20px;height:80%;background:#d8d0f0;border-radius:3px"></div><div style="flex:1;height:80%;background:#c8c0e8;border-radius:3px"></div></div>'
+};
+FILM_PATTERNS.forEach(function(p){
+  var c = document.createElement('div'); c.className='fp-card'+(p.id===curPattern?' active':'');
+  c.innerHTML='<div class="fp-preview" style="background:'+p.bg+'">'+(FP_ICONS[p.id] || '')+'</div><div class="fp-name">'+p.name+'</div>';
+  c.addEventListener('click',function(){
+    curPattern=p.id;
+    fpGrid.querySelectorAll('.fp-card').forEach(function(x){x.classList.remove('active');});
+    c.classList.add('active');
+    updatePreview();
+  });
+  fpGrid.appendChild(c);
+});
+
+// ===== FONT GRID =====
+var fGrid = document.getElementById('fontGrid');
+FONTS.forEach(function(f){
+  var btn = document.createElement('button'); btn.className='font-btn2'+(f.id===curFont?' active':'');
+  btn.style.fontFamily="'"+f.s+"',cursive"; btn.textContent=f.label;
+  btn.addEventListener('click',function(){
+    curFont=f.id;
+    fGrid.querySelectorAll('.font-btn2').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    // update CSS vars for instant font feedback
+    document.documentElement.style.setProperty('--fd', f.fd);
+    document.documentElement.style.setProperty('--fb', f.fb);
+  });
+  fGrid.appendChild(btn);
+});
+
+// ===== LIVE PREVIEW =====
+function updatePreview(){
+  var frame = document.getElementById('livePreviewFrame');
+  if (!frame) return;
+  frame.setAttribute('data-radio', curStyle);
+  document.body.setAttribute('data-film', curPattern);
+  var styleName = (RADIO_STYLES.find(function(r){return r.id===curStyle;})||{name:curStyle}).name;
+  var patName   = (FILM_PATTERNS.find(function(p){return p.id===curPattern;})||{name:curPattern}).name;
+  var tag = document.getElementById('previewTag');
+  if (tag) tag.innerHTML = '<strong>'+styleName+'</strong><br>'+patName+' film';
+}
+
+function initPreviewRadio() {
+  // Theme + font + film style preview settings
+  RadioCore.applyTheme(curStyle);
+  document.body.setAttribute('data-film', curPattern);
+  RadioCore.applyFont(curFont);
+
+  // Set text labels
+  document.getElementById('heroTitle').textContent = document.getElementById('txtTitle').value || 'for you, always';
+  document.getElementById('heroSub').textContent   = document.getElementById('txtSub').value || 'turn the knob \u2014 every notch is a memory';
+  document.getElementById('tuneLabel').textContent = document.getElementById('txtKnob').value || 'tune';
+  document.getElementById('hintText').textContent  = document.getElementById('txtHint').value || 'drag the knob to scrub \u2014 press \u266b to play';
+
+  // Stop Step 2 audio preview
+  pAudio.pause();
+  isPreviewPlaying = false;
+  apPlay.innerHTML = '&#9654;';
+  apPlay.classList.remove('playing');
+  if(previewStop) clearTimeout(previewStop);
+
+  var previewUrl = audioFile ? URL.createObjectURL(audioFile) : null;
+  var corePhotos = photos.map(function(p){ return { url: p.url, caption: p.caption }; });
+
+  window.activeRadioWidget = RadioCore.init({
+    photos: corePhotos,
+    audioSrc: previewUrl,
+    audioStart: audioStart,
+    audioEnd: audioEnd,
+    captionDefault: document.getElementById('txtCaption').value || 'press play and turn the dial\u2026'
+  });
+}
+
+// ===== 4-DIGIT PIN =====
+var pinInputs = [document.getElementById('pin0'),document.getElementById('pin1'),
+                 document.getElementById('pin2'),document.getElementById('pin3')];
+pinInputs.forEach(function(inp, i){
+  inp.addEventListener('input', function(){
+    inp.value = inp.value.replace(/\D/g,'');
+    inp.classList.toggle('filled', inp.value.length === 1);
+    document.getElementById('pinError').style.display = 'none';
+    if (inp.value && i < 3) pinInputs[i+1].focus();
+  });
+  inp.addEventListener('keydown', function(e){
+    if (e.key === 'Backspace' && !inp.value && i > 0) { pinInputs[i-1].focus(); }
+    if (e.key === 'ArrowLeft'  && i > 0) { e.preventDefault(); pinInputs[i-1].focus(); }
+    if (e.key === 'ArrowRight' && i < 3) { e.preventDefault(); pinInputs[i+1].focus(); }
+  });
+  inp.addEventListener('paste', function(e){
+    e.preventDefault();
+    var text = (e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,4);
+    text.split('').forEach(function(ch, j){ if(j+i<4) pinInputs[j+i].value=ch; pinInputs[j+i].classList.add('filled'); });
+    var next = Math.min(3, i + text.length - 1);
+    pinInputs[next].focus();
+  });
+});
+
+function getPinCode(){ return pinInputs.map(function(inp){return inp.value;}).join(''); }
+
+function goToDesignDone(){
+  var code = getPinCode();
+  if (!/^\d{4}$/.test(code)) {
+    document.getElementById('pinError').style.display = 'block';
+    pinInputs[0].focus();
+    pinInputs[0].scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  document.getElementById('pinError').style.display = 'none';
+  lockCode     = code;
+  lockQuestion = document.getElementById('lockQuestion').value.trim();
+  goTo(4);
+}
+
+window.copySuccessLink = function() {
+  var btn = document.getElementById('successCopyBtn');
+  var input = document.getElementById('successLinkInput');
+  navigator.clipboard.writeText(input.value)
+    .then(function() { flashSuccessBtn(btn); })
+    .catch(function() {
+      input.select();
+      document.execCommand('copy');
+      flashSuccessBtn(btn);
+    });
+};
+
+function flashSuccessBtn(btn) {
+  btn.textContent = '✓ Copied!';
+  btn.style.background = '#059669';
+  btn.style.color = '#ffffff';
+  setTimeout(function() {
+    btn.textContent = 'Copy Link';
+    btn.style.background = '#34d399';
+    btn.style.color = '#064e3b';
+  }, 2000);
+}
+
+window.resetWizard = function() {
+  // Revoke object URLs to prevent memory leaks
+  photos.forEach(function(p){ URL.revokeObjectURL(p.url); });
+  photos = [];
+  audioFile = null;
+  audioStart = 0;
+  audioEnd = 0;
+  audioDur = 0;
+  curStyle = 'kawaii';
+  curPattern = 'classic';
+  curFont = 'playful';
+  lockQuestion = '';
+  lockCode = '';
+
+  // Clear inputs
+  document.getElementById('photosInput').value = '';
+  document.getElementById('audioInput').value = '';
+  document.getElementById('txtTitle').value = '';
+  document.getElementById('txtSub').value = '';
+  document.getElementById('txtCaption').value = '';
+  document.getElementById('txtKnob').value = '';
+  document.getElementById('txtHint').value = '';
+  document.getElementById('lockQuestion').value = '';
+  pinInputs.forEach(function(inp){ inp.value = ''; inp.classList.remove('filled'); });
+
+  // Reset grids
+  renderGrid();
+  document.getElementById('audioPlayerWrap').style.display = 'none';
+
+  // Reset preview theme/film attributes
+  document.body.removeAttribute('data-radio');
+  document.body.removeAttribute('data-film');
+  document.documentElement.style.removeProperty('--fd');
+  document.documentElement.style.removeProperty('--fb');
+
+  // Toggle display back
+  document.getElementById('publishCard').style.display = 'block';
+  document.getElementById('successPanel').style.display = 'none';
+  document.getElementById('previewBackButton').style.display = 'inline-block';
+
+  // Stop any active radio audio
+  var aud = document.getElementById('audio');
+  if (aud) aud.pause();
+
+  goTo(1);
+};
+
+
+// ===== SUMMARY =====
+function buildSummary(){
+  var s='';
+  s+='<strong style="color:#e8d5ff">Photos:</strong> '+photos.length+' photo'+(photos.length!==1?'s':'')+'<br>';
+  s+='<strong style="color:#e8d5ff">Song:</strong> '+(audioFile?audioFile.name+' ('+fmtTime(audioStart)+' \u2192 '+fmtTime(audioEnd)+')':'None')+'<br>';
+  s+='<strong style="color:#e8d5ff">Radio style:</strong> '+(RADIO_STYLES.find(function(r){return r.id===curStyle;})||{name:curStyle}).name+'<br>';
+  s+='<strong style="color:#e8d5ff">Film pattern:</strong> '+(FILM_PATTERNS.find(function(p){return p.id===curPattern;})||{name:curPattern}).name+'<br>';
+  s+='<strong style="color:#e8d5ff">Font:</strong> '+(FONTS.find(function(f){return f.id===curFont;})||{label:curFont}).label+'<br>';
+  s+='<strong style="color:#e8d5ff">Heading:</strong> &ldquo;'+(document.getElementById('txtTitle').value||'for you, always')+'&rdquo;<br>';
+  s+='<strong style="color:#e8d5ff">&#128274; Lock:</strong> '+(lockCode?'Code set &#9989;':'<em style="color:#f87171;">No code &mdash; go back to Step 3 and set one.</em>');
+  document.getElementById('summaryBox').innerHTML=s;
+}
+
+// ===== CREATE RADIO =====
+async function createRadio(){
+  var btn=document.getElementById('createBtn');
+  var lbl=document.getElementById('createBtnLabel');
+  var spn=document.getElementById('createSpinner');
+  var err=document.getElementById('createError');
+  if(photos.length===0){err.textContent='Please add at least one photo first.';err.style.display='block';return;}
+  if(!lockCode||lockCode.length!==4){err.textContent='Please go back to Step 3 and set a 4-digit lock code.';err.style.display='block';return;}
+  err.style.display='none';
+  btn.classList.add('loading');lbl.style.display='none';spn.style.display='block';
+  try{
+    var fd=new FormData();
+    var captions=photos.map(function(p){return p.caption;});
+    var config={
+      radioStyle:curStyle, filmPattern:curPattern, fontId:curFont,
+      captions:captions,
+      audioStart:audioStart, audioEnd:audioEnd, audioDur:audioDur,
+      title:document.getElementById('txtTitle').value||'for you, always',
+      tagline:document.getElementById('txtSub').value||'turn the knob \u2014 every notch is a memory',
+      captionDefault:document.getElementById('txtCaption').value||'press play and turn the dial\u2026',
+      knobLabel:document.getElementById('txtKnob').value||'tune',
+      hint:document.getElementById('txtHint').value||'drag the knob to scrub \u2014 press \u266b to play',
+      lockQuestion:lockQuestion,
+      lockCode:lockCode
+    };
+    fd.append('config',JSON.stringify(config));
+    photos.forEach(function(p,i){fd.append('photos',p.file,'photo_'+i+'.'+p.file.name.split('.').pop());});
+    if(audioFile) fd.append('audio',audioFile,audioFile.name);
+    var res=await fetch('/api/create',{method:'POST',body:fd});
+    if(!res.ok)throw new Error('Server error '+res.status);
+    var data=await res.json();
+    
+    // Do NOT redirect, show success panel in place
+    btn.classList.remove('loading');lbl.style.display='flex';spn.style.display='none';
+    
+    var shareLink = window.location.origin + '/radio/' + data.id;
+    document.getElementById('successLinkInput').value = shareLink;
+    document.getElementById('publishCard').style.display = 'none';
+    document.getElementById('successPanel').style.display = 'block';
+    document.getElementById('previewBackButton').style.display = 'none'; // hide back btn on success
+  }catch(e){
+    err.textContent='Error: '+e.message+'. Please try again.';
+    err.style.display='block';
+    btn.classList.remove('loading');lbl.style.display='flex';spn.style.display='none';
+  }
+}
+
+</script>
+</body>
+</html>
