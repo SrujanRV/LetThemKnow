@@ -447,10 +447,10 @@ body{
           '    <div class="hint" id="hintText">' + hintSafe + '</div>\n' +
           '  </div>\n\n' +
           '  <audio id="audio"></audio>\n\n' +
-          '  <script>\n' +
+          '  <' + 'script>\n' +
           jsContent + '\n' +
-          '  </script>\n' +
-          '  <script>\n' +
+          '  </' + 'script>\n' +
+          '  <' + 'script>\n' +
           '    (function () {\n' +
           '      RadioCore.applyTheme(' + JSON.stringify(cfg.radioStyle) + ');\n' +
           '      document.body.setAttribute("data-film", ' + JSON.stringify(cfg.filmPattern || "classic") + ');\n' +
@@ -466,7 +466,7 @@ body{
           '        window.activeRadioWidget.render();\n' +
           '      }\n' +
           '    }());\n' +
-          '  </script>\n' +
+          '  </' + 'script>\n' +
           '</body>\n' +
           '</html>';
 
