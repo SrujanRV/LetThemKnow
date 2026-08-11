@@ -129,6 +129,16 @@ body{
   </div>
 
   <div class="hint" id="hintText">drag the knob to scrub &mdash; press &#9835; to play with music</div>
+
+  <!-- Keep this forever offline download button -->
+  <div style="margin-top: 14px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+    <button id="downloadOfflineBtn" class="download-offline-btn" style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 0.9rem; font-weight: bold; color: #fff; background: linear-gradient(135deg, var(--trim1), var(--trim3)); border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: transform 0.2s, box-shadow 0.2s;">
+      <span id="downloadBtnIcon">💾</span> <span id="downloadBtnText">Keep this forever (Download Offline Radio)</span>
+    </button>
+    <span style="font-size: 0.72rem; color: var(--ink); opacity: 0.65; max-width: 320px; line-height: 1.4;">
+      Note: This will download a self-contained offline page containing the full audio & photos embedded directly (few MBs).
+    </span>
+  </div>
 </div>
 
 <audio id="audio"></audio>
@@ -297,10 +307,224 @@ body{
     if (window.activeRadioWidget && window.activeRadioWidget.render) {
       window.activeRadioWidget.render();
     }
+    
+    // Setup the Keep this forever offline download handler
+    setupOfflineDownload(cfg);
+
     setTimeout(function () {
       radioWrapper.style.opacity = '1';
     }, 50);
   }
+  function setupOfflineDownload(cfg) {
+    var btn = document.getElementById('downloadOfflineBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async function () {
+      if (btn.classList.contains('loading')) return;
+      btn.classList.add('loading');
+      btn.style.opacity = '0.7';
+      btn.style.cursor = 'not-allowed';
+      
+      var icon = document.getElementById('downloadBtnIcon');
+      var txt = document.getElementById('downloadBtnText');
+      icon.textContent = '⏳';
+      txt.textContent = 'Preparing files (may take a moment)...';
+
+      try {
+        // 1. Fetch style.css content
+        var cssRes = await fetch('/style.css');
+        if (!cssRes.ok) throw new Error('Could not fetch styles');
+        var cssContent = await cssRes.text();
+
+        // 2. Fetch radio-core.js content
+        var jsRes = await fetch('/radio-core.js');
+        if (!jsRes.ok) throw new Error('Could not fetch radio logic');
+        var jsContent = await jsRes.text();
+
+        // 3. Fetch each photo and convert to Base64
+        var offlinePhotos = [];
+        icon.textContent = '🖼️';
+        txt.textContent = 'Encoding photos (1/' + (cfg.photos ? cfg.photos.length : 0) + ')...';
+        if (cfg.photos && cfg.photos.length > 0) {
+          for (var i = 0; i < cfg.photos.length; i++) {
+            var p = cfg.photos[i];
+            txt.textContent = 'Encoding photos (' + (i + 1) + '/' + cfg.photos.length + ')...';
+            var b64Url = p.url;
+            if (p.url && !p.url.startsWith('data:')) {
+              try {
+                b64Url = await urlToBase64(p.url);
+              } catch (err) {
+                console.warn('Failed to embed photo: ' + p.url, err);
+              }
+            }
+            offlinePhotos.push({ url: b64Url, caption: p.caption });
+          }
+        }
+
+        // 4. Fetch audio and convert to Base64 (if exists)
+        var offlineAudioUrl = null;
+        if (cfg.audioUrl) {
+          icon.textContent = '🎵';
+          txt.textContent = 'Encoding music (this might take 10-15s depending on song length)...';
+          try {
+            offlineAudioUrl = await urlToBase64(cfg.audioUrl);
+          } catch (err) {
+            console.warn('Failed to embed audio: ' + cfg.audioUrl, err);
+          }
+        }
+
+        // 5. Generate self-contained HTML
+        icon.textContent = '📦';
+        txt.textContent = 'Packaging offline app...';
+
+        var titleSafe = (cfg.title || 'for you, always').replace(/"/g, '&quot;');
+        var taglineSafe = (cfg.tagline || '').replace(/"/g, '&quot;');
+        var knobLabelSafe = (cfg.knobLabel || 'tune').replace(/"/g, '&quot;');
+        var hintSafe = (cfg.hint || '').replace(/"/g, '&quot;');
+        var captionDefaultSafe = (cfg.captionDefault || '').replace(/"/g, '&quot;');
+
+        var template = '<!DOCTYPE html>\n' +
+          '<html lang="en">\n' +
+          '<head>\n' +
+          '  <meta charset="UTF-8">\n' +
+          '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+          '  <title>' + titleSafe + '</title>\n' +
+          '  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Dancing+Script:wght@600&family=Outfit:wght@500;700;900&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Poppins:wght@500;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">\n' +
+          '  <style>\n' +
+          cssContent + '\n' +
+          '    body {\n' +
+          '      display: flex;\n' +
+          '      justify-content: center;\n' +
+          '      align-items: center;\n' +
+          '      min-height: 100vh;\n' +
+          '      margin: 0;\n' +
+          '      overflow-x: hidden;\n' +
+          '    }\n' +
+          '  </style>\n' +
+          '</head>\n' +
+          '<body data-radio="' + cfg.radioStyle + '" data-film="' + (cfg.filmPattern || 'classic') + '">\n' +
+          '  <span class="sparkle" style="top:8%;left:8%;">&#10024;</span>\n' +
+          '  <span class="sparkle" style="top:14%;right:10%;animation-delay:1.2s;">&#128151;</span>\n' +
+          '  <span class="sparkle" style="bottom:10%;left:12%;animation-delay:2.4s;">&#11088;</span>\n' +
+          '  <span class="sparkle" style="bottom:16%;right:8%;animation-delay:3.1s;">&#10024;</span>\n\n' +
+          '  <div id="radioWrapper" style="display:flex; flex-direction:column; align-items:center; gap:26px; width:100%;">\n' +
+          '    <div class="hero">\n' +
+          '      <h1 id="heroTitle">' + titleSafe + '</h1>\n' +
+          '      <p id="heroSub">' + taglineSafe + '</p>\n' +
+          '    </div>\n\n' +
+          '    <div class="radio">\n' +
+          '      <span class="stripe-trim"></span>\n' +
+          '      <span class="knob-dot tl"></span><span class="knob-dot tr"></span>\n' +
+          '      <span class="knob-dot bl"></span><span class="knob-dot br"></span>\n' +
+          '      <div class="panel">\n' +
+          '        <div>\n' +
+          '          <div class="screen-frame">\n' +
+          '            <div class="screen">\n' +
+          '              <div class="sprocket-row top" id="sprocketTop"></div>\n' +
+          '              <div class="filmstrip" id="filmstrip"></div>\n' +
+          '              <div class="sprocket-row bottom" id="sprocketBottom"></div>\n' +
+          '            </div>\n' +
+          '          </div>\n' +
+          '          <div class="caption-plate" id="caption">loading&hellip;</div>\n' +
+          '          <div class="dial-scale"><div class="ticks"></div><div class="needle" id="needle"></div></div>\n' +
+          '        </div>\n' +
+          '        <div class="knob-col">\n' +
+          '          <div class="knob-wrap">\n' +
+          '            <button class="knob" id="knob"\n' +
+          '              role="slider" aria-label="Scrub through the film"\n' +
+          '              aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"\n' +
+          '              tabindex="0">\n' +
+          '              <span class="grip"></span>\n' +
+          '            </button>\n' +
+          '          </div>\n' +
+          '          <div class="label-plate" id="tuneLabel">' + knobLabelSafe + '</div>\n' +
+          '          <button class="power" id="power" aria-pressed="false" aria-label="Play">&#9835;</button>\n' +
+          '          <button class="rewind-btn" id="rewindBtn" title="Rewind to start">&#9198;</button>\n' +
+          '        </div>\n' +
+          '      </div>\n' +
+          '      <div class="grille"></div>\n' +
+          '    </div>\n\n' +
+          '    <div class="hint" id="hintText">' + hintSafe + '</div>\n' +
+          '  </div>\n\n' +
+          '  <audio id="audio"></audio>\n\n' +
+          '  <script>\n' +
+          jsContent + '\n' +
+          '  </script>\n' +
+          '  <script>\n' +
+          '    (function () {\n' +
+          '      RadioCore.applyTheme(' + JSON.stringify(cfg.radioStyle) + ');\n' +
+          '      document.body.setAttribute("data-film", ' + JSON.stringify(cfg.filmPattern || "classic") + ');\n' +
+          '      RadioCore.applyFont(' + JSON.stringify(cfg.fontId) + ');\n\n' +
+          '      window.activeRadioWidget = RadioCore.init({\n' +
+          '        photos:         ' + JSON.stringify(offlinePhotos) + ',\n' +
+          '        audioSrc:       ' + JSON.stringify(offlineAudioUrl) + ',\n' +
+          '        audioStart:     ' + cfg.audioStart + ',\n' +
+          '        audioEnd:       ' + cfg.audioEnd + ',\n' +
+          '        captionDefault: ' + JSON.stringify(captionDefaultSafe) + '\n' +
+          '      });\n\n' +
+          '      if (window.activeRadioWidget && window.activeRadioWidget.render) {\n' +
+          '        window.activeRadioWidget.render();\n' +
+          '      }\n' +
+          '    }());\n' +
+          '  </script>\n' +
+          '</body>\n' +
+          '</html>';
+
+        var blob = new Blob([template], { type: 'text/html' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        
+        var kebabTitle = (cfg.title || 'for-you-always')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+        a.download = kebabTitle + '.html';
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        icon.textContent = '✅';
+        txt.textContent = 'Saved!';
+        setTimeout(function() {
+          icon.textContent = '💾';
+          txt.textContent = 'Keep this forever (Download Offline Radio)';
+          btn.classList.remove('loading');
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+        }, 3000);
+
+      } catch (err) {
+        console.error('Error generating offline file:', err);
+        icon.textContent = '❌';
+        txt.textContent = 'Error: ' + err.message;
+        setTimeout(function() {
+          icon.textContent = '💾';
+          txt.textContent = 'Keep this forever (Download Offline Radio)';
+          btn.classList.remove('loading');
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+        }, 4000);
+      }
+    });
+  }
+
+  function urlToBase64(url) {
+    return fetch(url)
+      .then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.blob();
+      })
+      .then(function(blob) {
+        return new Promise(function(resolve, reject) {
+          var reader = new FileReader();
+          reader.onloadend = function() { resolve(reader.result); };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      });
+  }
+
 }());
 </script>
 </body>
