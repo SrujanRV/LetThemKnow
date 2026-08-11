@@ -935,10 +935,24 @@ async function createRadio(){
   btn.classList.add('loading');lbl.style.display='none';spn.style.display='block';
   try{
     var fd=new FormData();
-    var captions=photos.map(function(p){return p.caption;});
+    var photoConfigList = [];
+    var fileCount = 0;
+    
+    photos.forEach(function(p, i) {
+      if (p.file) {
+        photoConfigList.push({ url: '', caption: p.caption, isNew: true, fileIdx: fileCount });
+        fd.append('photos', p.file, 'photo_' + i + '.' + p.file.name.split('.').pop());
+        fileCount++;
+      } else {
+        photoConfigList.push({ url: p.url, caption: p.caption });
+      }
+    });
+
     var config={
+      id: editingId || undefined,
+      audioUrl: editingAudioUrl || undefined,
       radioStyle:curStyle, filmPattern:curPattern, fontId:curFont,
-      captions:captions,
+      photos: photoConfigList,
       audioStart:audioStart, audioEnd:audioEnd, audioDur:audioDur,
       title:document.getElementById('txtTitle').value||'for you, always',
       tagline:document.getElementById('txtSub').value||'turn the knob \u2014 every notch is a memory',
@@ -949,7 +963,6 @@ async function createRadio(){
       lockCode:lockCode
     };
     fd.append('config',JSON.stringify(config));
-    photos.forEach(function(p,i){fd.append('photos',p.file,'photo_'+i+'.'+p.file.name.split('.').pop());});
     if(audioFile) fd.append('audio',audioFile,audioFile.name);
     var res=await fetch('/api/create',{method:'POST',body:fd});
     if(!res.ok)throw new Error('Server error '+res.status);
