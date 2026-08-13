@@ -189,7 +189,7 @@
         <input type="file" id="photosInput" accept="image/*" multiple />
         <div class="upload-icon">&#128247;</div>
         <p><strong>Click to browse</strong> or drag &amp; drop photos here</p>
-        <p style="margin-top:6px;font-size:.78rem;">JPG, PNG, WEBP &mdash; up to 20 photos</p>
+        <p style="margin-top:6px;font-size:.78rem;">JPG, PNG, WEBP &mdash; up to 40 photos</p>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;min-height:22px;">
         <div class="drag-hint" id="dragHint" style="display:none;margin:0;">&#9776; Drag to reorder &nbsp;&bull;&nbsp; click caption to rename</div>
@@ -471,7 +471,7 @@ photosInput.addEventListener('change',function(e){addPhotos(Array.from(e.target.
 
 function addPhotos(files) {
   files.forEach(function(f){
-    if(photos.length >= 20) return;
+    if(photos.length >= 40) return;
     photos.push({file:f, url:URL.createObjectURL(f), caption:f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ')});
   });
   renderGrid();
@@ -484,7 +484,7 @@ function renderGrid() {
   document.getElementById('next1').disabled           = !hasPhotos;
   var countEl = document.getElementById('photoCount');
   countEl.style.display   = hasPhotos ? 'inline-block' : 'none';
-  countEl.textContent     = photos.length + ' / 20 photo' + (photos.length === 1 ? '' : 's');
+  countEl.textContent     = photos.length + ' / 40 photo' + (photos.length === 1 ? '' : 's');
   photos.forEach(function(p, i){
     var card = document.createElement('div');
     card.className='photo-card'; card.draggable=true; card.dataset.idx=i;

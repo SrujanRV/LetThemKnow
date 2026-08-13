@@ -125,7 +125,7 @@ app.get('/uploads/:id/:file', (req, res) => {
 
 // ── POST /api/create ───────────────────────────────────────────────────────
 app.post('/api/create',
-  upload.fields([{ name: 'photos', maxCount: 30 }, { name: 'audio', maxCount: 1 }]),
+  upload.fields([{ name: 'photos', maxCount: 50 }, { name: 'audio', maxCount: 1 }]),
   async (req, res) => {
     try {
       const config = JSON.parse(req.body.config);
